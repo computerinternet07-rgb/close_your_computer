@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#101827">
+  <title>2026/10/08｜15:00 關機提醒</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: "Noto Sans TC", "Microsoft JhengHei", system-ui, -apple-system, sans-serif;
+      font-synthesis: none;
+    }
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; margin: 0; }
+    body { background: #0c1220; color: #f8fafc; }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    .screen {
+      min-height: 100svh; min-height: 100dvh;
+      padding: max(28px, env(safe-area-inset-top)) 22px max(28px, env(safe-area-inset-bottom));
+      display: flex; align-items: center; justify-content: center;
+      text-align: center;
+    }
+    .panel { width: min(100%, 760px); margin: auto; }
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 10px 18px; border: 1px solid #41506b;
+      border-radius: 999px; color: #cbd5e1; background: #1b2940;
+      font-size: clamp(15px, 2.4vw, 18px); font-weight: 800;
+      letter-spacing: .035em;
+    }
+    .dot { width: 11px; height: 11px; border-radius: 50%; background: #60a5fa; }
+    h1 { margin: 24px 0 16px; font-size: clamp(34px, 6.5vw, 66px); line-height: 1.23; letter-spacing: .015em; }
+    p { line-height: 1.6; }
+    .lead { font-size: clamp(19px, 3.3vw, 28px); color: #cbd5e1; margin: 0 0 20px; }
+    .clock-label { color: #9fb1cc; font-size: 17px; margin: 26px 0 6px; }
+    .count {
+      margin: 0; font-size: clamp(65px, 13vw, 118px); font-weight: 900;
+      line-height: 1.1; font-variant-numeric: tabular-nums; letter-spacing: -.055em;
+    }
+    .hint { color: #94a3b8; font-size: 16px; margin: 20px auto 0; }
+    .primary {
+      width: min(100%, 350px); min-height: 56px; padding: 12px 22px;
+      border: 0; border-radius: 15px; background: #3b82f6;
+      color: white; font-weight: 800; font-size: 19px;
+      margin-top: 24px;
+    }
+    .primary:hover { background: #2563eb; }
+    .primary:focus-visible, input:focus-visible { outline: 3px solid #fde68a; outline-offset: 4px; }
+    .secondary-note { font-size: 15px; color: #94a3b8; margin-top: 18px; }
+    .warning-screen {
+      position: fixed; inset: 0; z-index: 2147483647;
+      background: radial-gradient(ellipse at 50% 15%, #6b1520 0%, #260c17 48%, #120b15 100%);
+      overflow: auto;
+    }
+    .warning-screen .eyebrow { color: #fff0d5; background: #7f1d1d; border-color: #f87171; }
+    .warning-screen .dot { background: #fbbf24; box-shadow: 0 0 0 5px #fbbf2426; }
+    .warning-screen h1 { color: #fff; }
+    .warning-screen .lead { color: #ffe1d7; }
+    .warning-screen .clock-label { color: #fed7aa; }
+    .warning-screen .count { color: #fcd34d; text-shadow: 0 5px 35px #0005; }
+    .instruction { font-size: clamp(22px, 4vw, 31px); font-weight: 900; margin: 18px 0 28px; }
+    .unlock {
+      width: min(100%, 440px); margin: 0 auto; padding: 24px;
+      border: 1px solid #8c4851; border-radius: 22px;
+      background: #170e17cc; text-align: left;
+    }
+    .unlock label { display: block; font-size: 18px; font-weight: 800; margin-bottom: 12px; }
+    .unlock input {
+      width: 100%; min-height: 58px; padding: 12px 17px;
+      border: 2px solid #a16b72; border-radius: 13px;
+      background: #fff; color: #0f172a; font-size: 23px;
+      letter-spacing: .15em; font-variant-numeric: tabular-nums;
+    }
+    .unlock .primary { width: 100%; margin-top: 14px; background: #fbbf24; color: #23140b; }
+    .unlock .primary:hover { background: #f59e0b; }
+    .error { min-height: 24px; margin: 10px 0 0; color: #fecaca; font-weight: 800; font-size: 16px; }
+    .success-mark { font-size: 72px; color: #86efac; }
+    .small-status { color: #94a3b8; font-size: 17px; }
+    [hidden] { display: none !important; }
+    @media (max-width: 480px) {
+      .screen { padding-left: 16px; padding-right: 16px; }
+      .unlock { padding: 18px; }
+      .count { font-size: clamp(62px, 20vw, 90px); }
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      .warning-screen .dot { animation: pulse 1.5s infinite; }
+      @keyframes pulse { 50% { opacity: .45; } }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section id="standbyScreen" class="screen" hidden>
+      <div class="panel">
+        <span class="eyebrow"><span class="dot"></span>今日限定・2026 年 10 月 8 日</span>
+        <h1>15:00 關機提醒</h1>
+        <p class="lead">今日 14:50 將在<strong>本網頁內</strong>顯示提醒畫面。</p>
+        <p class="clock-label">距離提醒出現還有</p>
+        <div id="standbyCount" class="count" aria-live="off">--:--</div>
+        <button id="fullscreenButton" class="primary" type="button">先將網頁設為全螢幕</button>
+        <p class="hint">請保持此網頁開啟。瀏覽器不允許網頁強制跳到其他程式前方。</p>
+        <p class="secondary-note">臺灣時間 · 2026/10/08 14:50 自動顯示</p>
+      </div>
+    </section>
+
+    <section id="warningScreen" class="screen warning-screen" role="alertdialog" aria-modal="true" aria-labelledby="warningTitle" aria-describedby="warningDesc" hidden>
+      <div class="panel">
+        <span class="eyebrow"><span class="dot"></span>緊急關機提醒</span>
+        <h1 id="warningTitle">距離 15:00<br>剩下不到 10 分鐘！</h1>
+        <p id="warningDesc" class="lead">請立即儲存工作，準備關閉電腦。</p>
+        <p id="warningClockLabel" class="clock-label">距離 15:00 還有</p>
+        <div id="warningCount" class="count" aria-live="off">10:00</div>
+        <p id="instruction" class="instruction">請趕快關閉電腦！</p>
+        <form id="unlockForm" class="unlock" autocomplete="off">
+          <label for="unlockPassword">輸入密碼解除此網頁提醒</label>
+          <input id="unlockPassword" type="password" name="password" inputmode="numeric" enterkeyhint="done" autocomplete="off" required aria-describedby="unlockError">
+          <button type="submit" class="primary">確認解除提醒</button>
+          <p id="unlockError" class="error" role="status" aria-live="polite"></p>
+        </form>
+        <p class="secondary-note">此提醒只在 2026/10/08 啟用，並非 Windows 系統鎖定。</p>
+      </div>
+    </section>
+
+    <section id="doneScreen" class="screen" hidden>
+      <div class="panel">
+        <div class="success-mark" aria-hidden="true">✓</div>
+        <h1 id="doneTitle">提醒已解除</h1>
+        <p id="doneDesc" class="lead">今日不會再顯示此網頁提醒。</p>
+        <p class="small-status">現在可以關閉此網頁。</p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      'use strict';
+      // 只在 2026/10/08 臺灣時間 14:50 至當日 23:59:59 生效。
+      // 固定使用 UTC 時戳，避免瀏覽器所在時區造成時間偏差。
+      const START = Date.UTC(2026, 9, 8, 6, 50, 0); // 台灣 14:50
+      const DEADLINE = Date.UTC(2026, 9, 8, 7, 0, 0); // 台灣 15:00
+      const EXPIRES = Date.UTC(2026, 9, 8, 16, 0, 0); // 台灣 10/09 00:00
+      const PASSWORD = '10081500';
+      const STORAGE_KEY = 'shutdown_reminder_unlocked_20261008';
+
+      const standbyScreen = document.getElementById('standbyScreen');
+      const warningScreen = document.getElementById('warningScreen');
+      const doneScreen = document.getElementById('doneScreen');
+      const standbyCount = document.getElementById('standbyCount');
+      const warningCount = document.getElementById('warningCount');
+      const warningTitle = document.getElementById('warningTitle');
+      const warningClockLabel = document.getElementById('warningClockLabel');
+      const instruction = document.getElementById('instruction');
+      const passwordField = document.getElementById('unlockPassword');
+      const unlockError = document.getElementById('unlockError');
+      const doneTitle = document.getElementById('doneTitle');
+      const doneDesc = document.getElementById('doneDesc');
+      let displayedPhase = '';
+
+      function isUnlocked() {
+        try { return localStorage.getItem(STORAGE_KEY) === 'yes'; }
+        catch { return false; }
+      }
+      function markUnlocked() {
+        try { localStorage.setItem(STORAGE_KEY, 'yes'); }
+        catch { /* 無痕/限制儲存模式下，只在目前開啟頁面有效 */ }
+      }
+      let unlockedThisPage = false;
+
+      function formatRemaining(ms) {
+        const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+      }
+
+      function showPhase(phase) {
+        if (displayedPhase === phase) return;
+        displayedPhase = phase;
+        standbyScreen.hidden = phase !== 'standby';
+        warningScreen.hidden = phase !== 'warning';
+        doneScreen.hidden = phase !== 'done' && phase !== 'expired';
+        if (phase === 'warning') {
+          // 只在這個分頁目前可見時要求鍵盤焦點，不干擾其他程式。
+          if (!document.hidden) passwordField.focus({ preventScroll: true });
+        }
+        if (phase === 'expired') {
+          doneTitle.textContent = '今日提醒已結束';
+          doneDesc.textContent = '此網頁僅在 2026 年 10 月 8 日啟用。';
+        }
+      }
+
+      function update() {
+        const now = Date.now();
+        if (now >= EXPIRES) {
+          showPhase('expired');
+        } else if (now < START) {
+          showPhase('standby');
+          standbyCount.textContent = formatRemaining(START - now);
+        } else if (unlockedThisPage || isUnlocked()) {
+          showPhase('done');
+        } else {
+          showPhase('warning');
+          if (now < DEADLINE) {
+            warningTitle.innerHTML = '距離 15:00<br>剩下不到 10 分鐘！';
+            warningClockLabel.textContent = '距離 15:00 還有';
+            warningCount.textContent = formatRemaining(DEADLINE - now);
+            instruction.textContent = '請趕快關閉電腦！';
+          } else {
+            warningTitle.innerHTML = '現在已經 15:00！';
+            warningClockLabel.textContent = '預定關機時間已到';
+            warningCount.textContent = '00:00';
+            instruction.textContent = '請立即儲存並關閉電腦！';
+          }
+        }
+      }
+
+      document.getElementById('fullscreenButton').addEventListener('click', async () => {
+        if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+          try { await document.documentElement.requestFullscreen(); }
+          catch { alert('瀏覽器未允許全螢幕，仍會在 14:50 顯示本頁提醒。'); }
+        }
+      });
+
+      document.getElementById('unlockForm').addEventListener('submit', (event) => {
+        event.preventDefault();
+        if (passwordField.value.trim() !== PASSWORD) {
+          unlockError.textContent = '密碼錯誤，請重新輸入。';
+          passwordField.value = '';
+          passwordField.focus();
+          return;
+        }
+        unlockedThisPage = true;
+        markUnlocked();
+        passwordField.value = '';
+        unlockError.textContent = '';
+        if (document.fullscreenElement && document.exitFullscreen) {
+          document.exitFullscreen().catch(() => {});
+        }
+        update();
+      });
+
+      document.addEventListener('visibilitychange', update);
+      window.addEventListener('focus', update);
+      update();
+      setInterval(update, 250);
+    })();
+  </script>
+</body>
+</html>
